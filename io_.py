@@ -7,16 +7,19 @@ from typing import Callable, Iterable, Union
 
 PathLike = Union[Path, str, None]
 
+
 def to_path(p: PathLike) -> Path:
     return Path(p or "")
 
+
 class _SafeIterable(Iterable):
     """
-        Iterable wrapper proxy which guarantees handler() will be called at 
-        end or (optionally, as with `finally`) on exception.
+    Iterable wrapper proxy which guarantees handler() will be called at
+    end or (optionally, as with `finally`) on exception.
 
-        Useful for preventing resource leaks.
+    Useful for preventing resource leaks.
     """
+
     def __init__(self, it: Iterable, handler: Callable, finally_):
         self.it = iter(it)
         self.handler = handler
@@ -30,7 +33,7 @@ class _SafeIterable(Iterable):
 
     def __iter__(self):
         return self
-    
+
     def __next__(self):
         try:
             v = next(self.it)
@@ -50,7 +53,6 @@ class _SafeIterable(Iterable):
             # this is a normal stop
             if self.finally_ or not is_exc:
                 self.handler()
-
 
 
 def safe_iter(it: Iterable, handler: Callable, finally_=True) -> Iterable:
