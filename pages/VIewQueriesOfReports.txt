@@ -6,11 +6,10 @@
 --Step 2 --
 Upload them to the database as views and then create pages on the website for each one, please. Including some sort of filter on the webpage to search items would be ideal too, but I know it can take some time so do that last if you do want to work on it.
 
-
 -- select product (checked out)
 CREATE VIEW library.products_checked_out AS
 SELECT pt.name AS Product_type, p.name AS Product_name , p.id AS Product_id
-FROM library.product AS p,  library.producttype AS pt,  library.item AS i,  library.checkoutstatus AS cs,  library.checkoutstatusvalue AS csv
+FROM library.product AS p,  library.producttype AS pt,  library.item AS i, library.checkoutstatus AS cs, library.checkoutstatusvalue AS csv
 WHERE p.product_type_id = pt.id
 AND p.id = i.product_id
 AND i.sku = cs.sku
@@ -62,7 +61,7 @@ FROM library.product AS p, library.producttype AS pt
 WHERE p.product_type_id = pt.id
 ORDER BY pt.name, p.name;
 -----------------------------------------------------------------------------------------
--- select user (checked out)
+-- select user (checked out) //PUT PRODUCT TYPE IN
 CREATE VIEW library.users_checked_out AS
 SELECT u.last_name || ', '||u.first_name AS User_Name, ut.name AS User_type,u.id, p.name AS Product_name, p.id AS Product_id
 FROM library.user AS u, library.usertype AS ut, library.checkoutstatus AS cs, library.checkoutstatusvalue AS csv, library.item AS i, library.product AS p, library.producthold AS ph
@@ -77,7 +76,7 @@ AND ph.user_id = u.id
 AND ph.completed = TRUE
 ORDER BY u.last_name;
 
---select user (held)
+--select user (held) //PUT PRODUCT TYPE IN
 CREATE VIEW library.checked_out_by AS
 SELECT u.last_name || ', '||u.first_name AS User_Name, ut.name AS User_type, u.id, p.name Product_name, p.id AS Product_id
 FROM library.user AS u, library.usertype AS ut, library.producthold AS ph, library.product AS p
