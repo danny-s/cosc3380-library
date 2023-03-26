@@ -63,8 +63,8 @@ ORDER BY pt.name, p.name;
 -----------------------------------------------------------------------------------------
 -- select user (checked out) //PUT PRODUCT TYPE IN
 CREATE VIEW library.users_checked_out AS
-SELECT u.last_name || ', '||u.first_name AS User_Name, ut.name AS User_type,u.id, p.name AS Product_name, p.id AS Product_id
-FROM library.user AS u, library.usertype AS ut, library.checkoutstatus AS cs, library.checkoutstatusvalue AS csv, library.item AS i, library.product AS p, library.producthold AS ph
+SELECT u.last_name || ', '||u.first_name AS User_Name, ut.name AS User_type,u.id,pt.name AS Product_type, p.name AS Product_name, p.id AS Product_id
+FROM library.user AS u, library.usertype AS ut, library.checkoutstatus AS cs, library.checkoutstatusvalue AS csv, library.item AS i, library.product AS p, library.producthold AS ph, library.producttype AS pt
 WHERE u.user_type_id = ut.id
 AND i.product_id = p.id
 AND cs.sku = i.sku
@@ -73,16 +73,18 @@ AND cs.status_id = csv.id
 AND csv.value = 'OUT' 
 AND ph.product_id = p.id
 AND ph.user_id = u.id
+AND p.product_type_id = pt.id
 AND ph.completed = TRUE
 ORDER BY u.last_name;
 
 --select user (held) //PUT PRODUCT TYPE IN
 CREATE VIEW library.checked_out_by AS
-SELECT u.last_name || ', '||u.first_name AS User_Name, ut.name AS User_type, u.id, p.name Product_name, p.id AS Product_id
-FROM library.user AS u, library.usertype AS ut, library.producthold AS ph, library.product AS p
+SELECT u.last_name || ', '||u.first_name AS User_Name, ut.name AS User_type, u.id,pt.name AS Product_type, p.name Product_name, p.id AS Product_id
+FROM library.user AS u, library.usertype AS ut, library.producthold AS ph, library.product AS p,library.producttype AS pt
 WHERE u.user_type_id = ut.id
 AND ph.user_id = u.id 
 AND p.id = ph.product_id
+AND p.product_type_id = pt.id
 AND ph.completed = FALSE
 ORDER BY u.last_name;
 
