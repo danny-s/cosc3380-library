@@ -123,7 +123,7 @@ AND cs.status_id = (SELECT id FROM  library.checkoutstatusvalue WHERE value = 'O
 GROUP BY u.first_name, u.last_name, u.id, pt.name
 ORDER BY u.last_name;
 ---------------------------------------------------------------------------------------------
--- item (status of (in stock, checked, held or missing)) //asks dad to check
+-- item (status of (in stock, checked, held or missing)) 
 CREATE VIEW library.item_status AS
 SELECT pt.name AS Product_type, p.name AS Product_name, i.sku AS sku,
   CASE
