@@ -114,14 +114,14 @@ ORDER BY u.last_name;
 
 -- select user (lifetime of total checked) 
 CREATE VIEW library.checkout_history AS
-SELECT u.first_name, u.last_name, u.id, pt.name, COUNT(*) AS total_checked
+SELECT u.last_name || ', '||u.first_name AS User_Name, u.id, pt.name, COUNT(*) AS total_checked
 FROM library.user as u, library.producttype AS pt, library.product AS p, library.checkoutstatus AS cs, library.item AS i
 WHERE u.id = cs.user_id
 AND p.id = i.product_id 
 AND i.sku = cs.sku
 AND p.product_type_id = pt.id
 AND cs.status_id = (SELECT id FROM  library.checkoutstatusvalue WHERE value = 'OUT')
-GROUP BY u.first_name, u.last_name, u.id, pt.name
+GROUP BY u.last_name || ', '||u.first_name, u.last_name, u.id, pt.name
 ORDER BY u.last_name;
 ---------------------------------------------------------------------------------------------
 -- item (status of (in stock, checked, held or missing)) 
