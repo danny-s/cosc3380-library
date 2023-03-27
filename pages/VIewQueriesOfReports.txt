@@ -141,7 +141,7 @@ LEFT JOIN library.producthold AS ph on ph.product_id = p.id;
  
 -- checked by user (if applicable)
 CREATE VIEW library.items_checked_out__by_approved_users AS
-SELECT u.id AS User_id, u.first_name, u.last_name, pt.name AS Product_Type, P.name AS item_name, i.sku AS sku, P.cost
+SELECT u.id AS User_id, u.last_name || ', '||u.first_name AS User_Name, pt.name AS Product_Type, P.name AS item_name, i.sku AS sku, P.cost
 FROM library.item AS i, library.product AS p,library.producttype AS pt, library.checkoutstatus AS cs, library.checkoutstatusvalue AS csv, library.user AS u
 WHERE u.id = cs.user_id
 AND p.product_type_id = pt.id
