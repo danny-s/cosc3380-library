@@ -6,11 +6,10 @@
 --Step 2 --
 Upload them to the database as views and then create pages on the website for each one, please. Including some sort of filter on the webpage to search items would be ideal too, but I know it can take some time so do that last if you do want to work on it.
 
-
 -- select product (checked out)
 CREATE VIEW library.products_checked_out AS
 SELECT pt.name AS Product_type, p.name AS Product_name , p.id AS Product_id
-FROM library.product AS p,  library.producttype AS pt,  library.item AS i,  library.checkoutstatus AS cs,  library.checkoutstatusvalue AS csv
+FROM library.product AS p,  library.producttype AS pt,  library.item AS i, library.checkoutstatus AS cs, library.checkoutstatusvalue AS csv
 WHERE p.product_type_id = pt.id
 AND p.id = i.product_id
 AND i.sku = cs.sku
@@ -62,10 +61,10 @@ FROM library.product AS p, library.producttype AS pt
 WHERE p.product_type_id = pt.id
 ORDER BY pt.name, p.name;
 -----------------------------------------------------------------------------------------
--- select user (checked out)
+-- select user (checked out) //PUT PRODUCT TYPE IN
 CREATE VIEW library.users_checked_out AS
-SELECT u.last_name || ', '||u.first_name AS User_Name, ut.name AS User_type,u.id, p.name AS Product_name, p.id AS Product_id
-FROM library.user AS u, library.usertype AS ut, library.checkoutstatus AS cs, library.checkoutstatusvalue AS csv, library.item AS i, library.product AS p, library.producthold AS ph
+SELECT u.last_name || ', '||u.first_name AS User_Name, ut.name AS User_type,u.id,pt.name AS Product_type, p.name AS Product_name, p.id AS Product_id
+FROM library.user AS u, library.usertype AS ut, library.checkoutstatus AS cs, library.checkoutstatusvalue AS csv, library.item AS i, library.product AS p, library.producthold AS ph, library.producttype AS pt
 WHERE u.user_type_id = ut.id
 AND i.product_id = p.id
 AND cs.sku = i.sku
@@ -74,16 +73,18 @@ AND cs.status_id = csv.id
 AND csv.value = 'OUT' 
 AND ph.product_id = p.id
 AND ph.user_id = u.id
+AND p.product_type_id = pt.id
 AND ph.completed = TRUE
 ORDER BY u.last_name;
 
---select user (held)
+--select user (held) //PUT PRODUCT TYPE IN
 CREATE VIEW library.checked_out_by AS
-SELECT u.last_name || ', '||u.first_name AS User_Name, ut.name AS User_type, u.id, p.name Product_name, p.id AS Product_id
-FROM library.user AS u, library.usertype AS ut, library.producthold AS ph, library.product AS p
+SELECT u.last_name || ', '||u.first_name AS User_Name, ut.name AS User_type, u.id,pt.name AS Product_type, p.name Product_name, p.id AS Product_id
+FROM library.user AS u, library.usertype AS ut, library.producthold AS ph, library.product AS p,library.producttype AS pt
 WHERE u.user_type_id = ut.id
 AND ph.user_id = u.id 
 AND p.id = ph.product_id
+AND p.product_type_id = pt.id
 AND ph.completed = FALSE
 ORDER BY u.last_name;
 
@@ -113,17 +114,17 @@ ORDER BY u.last_name;
 
 -- select user (lifetime of total checked) 
 CREATE VIEW library.checkout_history AS
-SELECT u.first_name, u.last_name, u.id, pt.name, COUNT(*) AS total_checked
+SELECT u.last_name || ', '||u.first_name AS User_Name, u.id, pt.name, COUNT(*) AS total_checked
 FROM library.user as u, library.producttype AS pt, library.product AS p, library.checkoutstatus AS cs, library.item AS i
 WHERE u.id = cs.user_id
 AND p.id = i.product_id 
 AND i.sku = cs.sku
 AND p.product_type_id = pt.id
 AND cs.status_id = (SELECT id FROM  library.checkoutstatusvalue WHERE value = 'OUT')
-GROUP BY u.first_name, u.last_name, u.id, pt.name
+GROUP BY u.last_name || ', '||u.first_name, u.last_name, u.id, pt.name
 ORDER BY u.last_name;
 ---------------------------------------------------------------------------------------------
--- item (status of (in stock, checked, held or missing)) //asks dad to check
+-- item (status of (in stock, checked, held or missing)) 
 CREATE VIEW library.item_status AS
 SELECT pt.name AS Product_type, p.name AS Product_name, i.sku AS sku,
   CASE
@@ -140,7 +141,7 @@ LEFT JOIN library.producthold AS ph on ph.product_id = p.id;
  
 -- checked by user (if applicable)
 CREATE VIEW library.items_checked_out__by_approved_users AS
-SELECT u.id AS User_id, u.first_name, u.last_name, pt.name AS Product_Type, P.name AS item_name, i.sku AS sku, P.cost
+SELECT u.id AS User_id, u.last_name || ', '||u.first_name AS User_Name, pt.name AS Product_Type, P.name AS item_name, i.sku AS sku, P.cost
 FROM library.item AS i, library.product AS p,library.producttype AS pt, library.checkoutstatus AS cs, library.checkoutstatusvalue AS csv, library.user AS u
 WHERE u.id = cs.user_id
 AND p.product_type_id = pt.id

@@ -24,10 +24,13 @@ class Application:
 
         If request_type is not set or None, the url becomes the default for any request type
         without a designated handler
+
+        If image_type is set, only requests with that image type will use this handler.
         """
         if request_type is not None:
             request_type = request_type.upper()
         self.urls.setdefault(url, {})[request_type] = handler
+
 
     def resolve(self, environ: dict) -> Callable[[HTTPRequest], HTTPResponse]:
         # "standard environ keys" https://wsgi.readthedocs.io/en/latest/definitions.html
