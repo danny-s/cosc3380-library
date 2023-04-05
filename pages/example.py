@@ -1,7 +1,5 @@
 import urllib.parse
-
 from web import response, redirect, HTTPRequest
-
 
 def example_get_response(request: HTTPRequest):
     """
@@ -71,3 +69,5 @@ def hello(request: HTTPRequest):
         if text := request.query.get("text", ["nothing"])[0]:
             body += f" you said '{text}'"
     return response(request, body)
+
+

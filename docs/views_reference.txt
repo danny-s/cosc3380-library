@@ -1,0 +1,158 @@
+- create reports (views) for each of: 
+1. product (checked/fined/missing/inventory, product info)
+2. user (checked/held/missing, disabled, lifetime total checked of each product type) 
+3. item (status of (in stock, checked, held or missing), checked by user (if applicable), product info).
+4. replace id attribute with SKU attribute to items in line with other inventory management systems.
+--Step 2 --
+Upload them to the database as views and then create pages on the website for each one, please. Including some sort of filter on the webpage to search items would be ideal too, but I know it can take some time so do that last if you do want to work on it.
+
+-- select product (checked out)
+CREATE VIEW library.products_checked_out AS
+SELECT pt.name AS Product_type, p.name AS Product_name , p.id AS Product_id
+FROM library.product AS p,  library.producttype AS pt,  library.item AS i, library.checkoutstatus AS cs, library.checkoutstatusvalue AS csv
+WHERE p.product_type_id = pt.id
+AND p.id = i.product_id
+AND i.sku = cs.sku
+AND cs.status_id = csv.id
+AND csv.value = 'OUT'
+ORDER BY pt.name;
+
+--select product (fined) 
+CREATE VIEW library.products_fined AS
+SELECT pt.name AS Product_type, p.name AS Product_name ,p.id, csf.cost as fine, pt.fine_multiplier as multiplier,
+fsv.value AS Fine_status
+FROM  library.product AS p, library.producttype AS pt,library.checkoutfine as csf, library.item AS i, library.checkoutstatus AS cs, library.checkoutstatusvalue AS csv, library.finestatusvalue as fsv
+WHERE csf.checkoutstatus_id = cs.id
+AND csf.status = fsv.id
+AND p.product_type_id = pt.id
+AND p.id = i.product_id
+AND i.sku = cs.sku
+AND cs.status_id = csv.id
+AND csv.value = 'OVERDUE';
+
+-- select product (missing)
+CREATE VIEW library.products_missing AS
+SELECT pt.name AS Product_type, p.name AS Product_name, p.id, p.cost
+FROM library.product AS p, library.producttype AS pt,library.item AS i, library.checkoutstatus AS cs, library.checkoutstatusvalue AS csv
+WHERE p.product_type_id = pt.id
+AND p.id = i.product_id
+AND i.sku = cs.sku
+AND cs.status_id = csv.id
+AND csv.value = 'LOST'
+ORDER BY pt.name, p.name;
+
+-- select product (inventory)
+CREATE VIEW library.products_in_inventory AS
+SELECT pt.name AS Product_type, p.name AS Product_name, p.id, p.cost 
+FROM library.product AS p, library.producttype AS pt, library.item AS i, library.checkoutstatus AS cs, library.checkoutstatusvalue AS csv, library.producthold AS ph
+WHERE p.product_type_id = pt.id
+AND p.id = i.product_id
+AND i.sku = cs.sku
+AND cs.status_id = csv.id
+AND csv.value = 'RETURNED'
+AND ph.product_id = p.id
+AND ph.completed = FALSE
+ORDER BY pt.name, p.name;
+
+-- select product (product info)
+CREATE VIEW library.products_info AS
+SELECT pt.name AS Product_Type,p.name AS Product_name,p.id AS Product_id, p.cost
+FROM library.product AS p, library.producttype AS pt
+WHERE p.product_type_id = pt.id
+ORDER BY pt.name, p.name;
+-----------------------------------------------------------------------------------------
+-- select user (checked out) //PUT PRODUCT TYPE IN
+CREATE VIEW library.users_checked_out AS
+SELECT u.last_name || ', '||u.first_name AS User_Name, ut.name AS User_type,u.id,pt.name AS Product_type, p.name AS Product_name, p.id AS Product_id
+FROM library.user AS u, library.usertype AS ut, library.checkoutstatus AS cs, library.checkoutstatusvalue AS csv, library.item AS i, library.product AS p, library.producthold AS ph, library.producttype AS pt
+WHERE u.user_type_id = ut.id
+AND i.product_id = p.id
+AND cs.sku = i.sku
+AND u.id = cs.user_id
+AND cs.status_id = csv.id
+AND csv.value = 'OUT' 
+AND ph.product_id = p.id
+AND ph.user_id = u.id
+AND p.product_type_id = pt.id
+AND ph.completed = TRUE
+ORDER BY u.last_name;
+
+--select user (held) //PUT PRODUCT TYPE IN
+CREATE VIEW library.products_held_by AS
+SELECT u.last_name || ', '||u.first_name AS User_Name, ut.name AS User_type, u.id,pt.name AS Product_type, p.name Product_name, p.id AS Product_id
+FROM library.user AS u, library.usertype AS ut, library.producthold AS ph, library.product AS p,library.producttype AS pt
+WHERE u.user_type_id = ut.id
+AND ph.user_id = u.id 
+AND p.id = ph.product_id
+AND p.product_type_id = pt.id
+AND ph.completed = FALSE
+ORDER BY u.last_name;
+
+--select user (missing)
+CREATE VIEW library.missing_product AS
+SELECT u.last_name || ', '||u.first_name AS User_Name, ut.name AS User_type,u.id, pt.name AS Product_Type,p.name AS Product_name,p.id AS Product_id, i.sku AS sku, p.cost
+FROM library.user AS u,library.usertype AS ut, library.checkoutstatus AS cs, library.checkoutstatusvalue AS csv, library.checkoutfine AS cf, library.item as i, library.product AS p, library.producttype AS pt, library.finestatusvalue as fsv
+WHERE p.product_type_id = pt.id
+AND i.product_id = p.id
+AND cs.sku = i.sku
+AND fsv.value = 'LOST'
+AND cf.status = fsv.id
+AND cf.checkoutstatus_id = cs.id
+AND u.user_type_id = ut.id
+AND u.id = cs.user_id
+AND cs.status_id = csv.id
+AND csv.value = 'OVERDUE'
+ORDER BY u.last_name;
+
+--select user (disabled)
+CREATE VIEW library.users_disabled AS
+SELECT u.last_name || ', '||u.first_name AS User_Name,ut.name AS User_type,u.id
+FROM library.user AS u,library.usertype AS ut
+WHERE u.user_type_id = ut.id
+AND u.enabled = FALSE
+ORDER BY u.last_name;                                   
+
+-- select user (lifetime of total checked) 
+CREATE VIEW library.checkout_history AS
+SELECT u.last_name || ', '||u.first_name AS User_Name, u.id, pt.name, COUNT(*) AS total_checked
+FROM library.user as u, library.producttype AS pt, library.product AS p, library.checkoutstatus AS cs, library.item AS i
+WHERE u.id = cs.user_id
+AND p.id = i.product_id 
+AND i.sku = cs.sku
+AND p.product_type_id = pt.id
+AND cs.status_id = (SELECT id FROM  library.checkoutstatusvalue WHERE value = 'OUT')
+GROUP BY u.last_name || ', '||u.first_name, u.last_name, u.id, pt.name
+ORDER BY u.last_name;
+---------------------------------------------------------------------------------------------
+-- item (status of (in stock, checked, held or missing)) 
+CREATE VIEW library.item_status AS
+SELECT pt.name AS Product_type, p.name AS Product_name, i.sku AS sku,
+  CASE
+    WHEN i.sku IN (SELECT sku FROM library.checkoutstatus AS cs) THEN 'Checked Out'  
+    WHEN ph.product_id IS NOT NULL AND ph.completed = FALSE THEN 'Held'
+    WHEN i.sku NOT IN (SELECT sku FROM library.checkoutstatus AS cs) THEN 'In Stock' 
+    ELSE 'Missing'
+  END AS status
+FROM library.item AS i
+JOIN library.product AS p on i.product_id = p.id
+JOIN library.producttype AS pt on pt.id = p.product_type_id
+LEFT JOIN library.checkoutstatus AS cs on i.sku = cs.sku
+LEFT JOIN library.producthold AS ph on ph.product_id = p.id;
+ 
+-- checked by user (if applicable)
+CREATE VIEW library.items_checked_out__by_approved_users AS
+SELECT u.id AS User_id, u.last_name || ', '||u.first_name AS User_Name, pt.name AS Product_Type, P.name AS item_name, i.sku AS sku, P.cost
+FROM library.item AS i, library.product AS p,library.producttype AS pt, library.checkoutstatus AS cs, library.checkoutstatusvalue AS csv, library.user AS u
+WHERE u.id = cs.user_id
+AND p.product_type_id = pt.id
+AND i.product_id = p.id
+AND cs.sku = i.sku
+AND cs.status_id = csv.id
+AND csv.value = 'OUT' AND u.enabled = TRUE;
+
+-- item (product info)
+CREATE VIEW library.item_info AS
+SELECT pt.name AS Product_Type, P.name AS item_name, i.sku AS sku, p.cost
+FROM library.item AS i, library.product AS p, library.producttype as pt
+WHERE i.product_id = p.id
+AND p.product_type_id = pt.id;

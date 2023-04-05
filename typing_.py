@@ -1,6 +1,6 @@
 from typing import Union, Iterable
 
-import web
+import web as web
 
 Fields = Union["web.MultiField", dict[str, str], Iterable[tuple[str, str]]]
 Headers = Fields
